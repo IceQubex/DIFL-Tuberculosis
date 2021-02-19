@@ -1,0 +1,6 @@
+installer_stuff
+numbers/datasets
+tb/datasets
+*zip
+numbers/svhn_preprocessing/sorted_data/
+tb/augment_data/

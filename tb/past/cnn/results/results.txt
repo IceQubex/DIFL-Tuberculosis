@@ -1,0 +1,40 @@
+Results..
+
+TBX:
+
+The accuracy on the TBX dataset is: 0.7954545617103577.
+The AUC value on the TBX dataset is: 0.8568474264705882.
+The accuracy on the China dataset is: 0.47159090638160706.
+The AUC value on the China dataset is: 0.5665739268680445.
+The accuracy on the India dataset is: 0.6376811861991882.
+The AUC value on the India dataset is: 0.6793103448275862.
+The accuracy on the US dataset is: 0.5392857193946838.
+The AUC value on the US dataset is: 0.5700491233902576.
+
+
+China:
+
+The accuracy on the TBX dataset is: 0.4365558922290802.
+The AUC value on the TBX dataset is: 0.4115268039731229.
+The accuracy on the China dataset is: 0.6000000238418579.
+The AUC value on the China dataset is: 0.6470588235294118.
+The accuracy on the India dataset is: 0.5144927501678467.
+The AUC value on the India dataset is: 0.553448275862069.
+The accuracy on the US dataset is: 0.5688492059707642.
+The AUC value on the US dataset is: 0.5761359182530795.
+
+
+India:
+
+The accuracy on the TBX dataset is: 0.5060423016548157.
+The AUC value on the TBX dataset is: 0.568644098743792.
+The accuracy on the China dataset is: 0.4545454680919647.
+The AUC value on the China dataset is: 0.701245363010069.
+The accuracy on the India dataset is: 0.8148148059844971.
+The AUC value on the India dataset is: 0.8791208791208791.
+The accuracy on the US dataset is: 0.5076719522476196.
+The AUC value on the US dataset is: 0.6711710351343785.
+
+
+US:
+
