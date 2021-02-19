@@ -192,7 +192,20 @@ print(classification_model.summary())
 
 
 '''
-Prepare the overall 
+Prepare the overall classifier
+'''
+
+# define the input layer
+inputs3 = keras.Input(shape = (img_height,img_width,1))
+
+x = generator_model(inputs3)
+outputs3 = classification_model(x)
+
+# define the final model
+classification_overall_model = keras.Model(inputs=inputs3, outputs=outputs3, name="Classification_Overall_Model")
+
+# display the model summary
+print(classification_overall_model.summary())
 
 
 '''
@@ -247,24 +260,18 @@ while True:
 
             # classification training step
             with tf.GradientTape(persistent=True) as tape:
-                encodings = generator_model(xbatchclass, training=True)
-                logits = classification_model(encodings, training=True)
+                logits = classification_overall_model(xbatchclass, training=True)
                 classification_loss = binary_loss(ybatchclass, logits)
-            generator_gradients1 = tape.gradient(classification_loss, generator_model.trainable_weights)
-            classification_gradients = tape.gradient(classification_loss, classification_model.trainable_weights)
+            classification_gradients = tape.gradient(classification_loss, classification_overall_model.trainable_weights)
             del tape
             
             # update classification accuracy
             classification_accuracy.update_state(ybatchclass, logits)
             
             # update the generator and classifier models
-            generator_optimizer.apply_gradients(zip(generator_gradients1, generator_model.trainable_weights))
-            classification_optimizer.apply_gradients(zip(classification_gradients, classification_model.trainable_weights))
+            classification_optimizer.apply_gradients(zip(classification_gradients, classification_overall_model.trainable_weights))
 
             print(f"The classification accuracy on batch {i+1} is {float(classification_accuracy.result())}.")
-            
-
-
 
             # get the batches for the domain (GAN) training step
             try:
@@ -298,8 +305,6 @@ while True:
             
             print(f"The domain accuracy on batch {i+1} is {float(domain_accuracy.result())}.")
             
-
-
 
         # reset the metric
         classification_accuracy.reset_states()
