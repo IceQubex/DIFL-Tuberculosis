@@ -4,6 +4,8 @@ This repository contains the code relating to the research of utilizing domain a
 
 The numbers datasets were mainly used for evaluating correctness of algorithms, and determining the best hyper-parameters for the task of domain adaptation in tuberculosis detection.
 
+The required libraries and frameworks, and their corresponding version numbers are listed in the requirements.txt file.
+
 ## Numbers Domain Adaptation
 
 This repository contains code that is related to the task of domain adaptation in optical character recognition using numbers. There are 4 main datasets that were utilized, namely:
