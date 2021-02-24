@@ -4,3 +4,4 @@ tb/datasets
 *zip
 numbers/svhn_preprocessing/sorted_data/
 tb/augment_data/
+test_folder
