@@ -99,13 +99,26 @@ print("Done manipulating datasets!")
 Preparing the difl generator model
 '''
 
+# define the base resnet
+res = keras.applications.ResNet50(include_top=False,input_shape=(img_height,img_width,3),weights=None)
+
+# define the entire network architecture
+inputs = keras.Input(shape=(img_height,img_width,3))
+x = Rescaling(scale=1.0/255)(inputs)
+outputs = res(x)
+
+# define the final model
+generator_model = keras.Model(inputs=inputs, outputs=outputs, name="DIFL_Generator_Model")
+
+# display the difl model summary
+print(generator_model.summary())
+
+'''
 # define input layer
 inputs = keras.Input(shape=(img_height,img_width,3))
 
 # conduct rescaling of features
 x = Rescaling(scale=1.0/255)(inputs)
-
-# x = keras.applications.ResNet50(include_top=False,input_shape=(img_height,img_width,3),weights="None")
 
 # apply convolution and pooling layers
 x = layers.Conv2D(64, (5,5), activation = layers.LeakyReLU(alpha=0.2))(x)
@@ -125,7 +138,7 @@ generator_model = keras.Model(inputs=inputs, outputs=outputs, name="DIFL_Generat
 
 # display the difl model summary
 print(generator_model.summary())
-
+'''
 
 
 
@@ -133,6 +146,28 @@ print(generator_model.summary())
 Preparing the DIFL discriminator model
 '''
 
+# define the base vgg model
+vgg1 = keras.applications.VGG19(include_top=False,input_shape=(secondary_img_height,secondary_img_width,num_of_filters),weights=None)
+
+# define the entire network architecture
+inputs1 = keras.Input(shape=(secondary_img_height,secondary_img_width,num_of_filters))
+x = vgg1(inputs1)
+x = layers.Flatten()(x)
+x = layers.Dense(256, activation = layers.LeakyReLU(alpha=0.2))(x)
+x = layers.Dense(128, activation = layers.LeakyReLU(alpha=0.2))(x)
+x = layers.Dense(64, activation = layers.LeakyReLU(alpha=0.2))(x)
+outputs1 = layers.Dense(1, activation = 'sigmoid')(x)
+
+# define the final model
+discriminator_model = keras.Model(inputs=inputs1, outputs=outputs1, name="Discriminator_Model")
+
+# display the model summary
+print(discriminator_model.summary())
+
+
+
+
+'''
 # define input layer
 inputs1 = keras.Input(shape=(secondary_img_height,secondary_img_width,num_of_filters))
 
@@ -157,18 +192,13 @@ discriminator_model = keras.Model(inputs=inputs1, outputs=outputs1, name="DIFL_D
 
 # display the discriminator model summary
 print(discriminator_model.summary())
-
+'''
 
 
 
 '''
 Preparing the classification model
 '''
-
-vgg = keras.applications.VGG19(include_top=False,input_shape=(secondary_img_height,secondary_img_width,num_of_filters),weights=None)
-
-
-
 
 '''
 # define input layer
@@ -196,26 +226,21 @@ outputs2 = layers.Dense(1, activation = 'sigmoid')(x)
 classification_model = keras.Model(inputs=inputs2, outputs=outputs2, name = "Classification_Model")
 '''
 
-# display the model summary
-print(vgg.summary())
-
-
-
 '''
 Prepare the overall classifier
 '''
 
-# define the input layer
-inputs3 = keras.Input(shape = (img_height,img_width,3))
+# define the base vgg network
+vgg2 = keras.applications.VGG19(include_top=False,input_shape=(secondary_img_height,secondary_img_width,num_of_filters),weights=None)
 
+# define the entire network architecture
+inputs3 = keras.Input(shape = (img_height,img_width,3))
 x = generator_model(inputs3)
-x = vgg(x)
+x = vgg2(x)
 x = layers.Flatten()(x)
 x = layers.Dense(256, activation = layers.LeakyReLU(alpha=0.2))(x)
 x = layers.Dense(128, activation = layers.LeakyReLU(alpha=0.2))(x)
 x = layers.Dense(64, activation = layers.LeakyReLU(alpha=0.2))(x)
-
-# define output layer
 outputs3 = layers.Dense(1, activation = 'sigmoid')(x)
 
 # define the final model
@@ -228,11 +253,6 @@ print(classification_model.summary())
 '''
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ END OF LIST ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 '''
-
-
-
-
-
 
 
 '''
@@ -271,6 +291,8 @@ while True:
             except tf.errors.OutOfRangeError:
                 classification_iterator = iter(refresh_dataset(domain1_train_dataset))
                 xbatchclass, ybatchclass = classification_iterator.get_next()
+                print(f"The classification accuracy is {float(classification_accuracy.result())}.")
+                classification_accuracy.reset_states()
             
             # classification training step
             with tf.GradientTape(persistent=True) as tape:
@@ -285,7 +307,7 @@ while True:
             # update the generator and classifier models
             classification_optimizer.apply_gradients(zip(classification_gradients, classification_model.trainable_weights))
 
-            print(f"The classification accuracy on batch {i+1} is {float(classification_accuracy.result())}.")
+            #print(f"The classification accuracy on batch {i+1} is {float(classification_accuracy.result())}.")
 
             # get the batches for the domain (GAN) training step
             try:
@@ -293,6 +315,8 @@ while True:
             except tf.errors.OutOfRangeError:
                 domain_iterator = iter(refresh_dataset(combined_dataset))
                 xbatchdomain, ybatchdomain = domain_iterator.get_next()
+                print(f"The domain accuracy is {float(domain_accuracy.result())}.")
+                domain_accuracy.reset_states()
             
             # define the generator labels used for calculating the generator loss
             generator_labels = tf.fill([len(xbatchdomain),1],0.5) 
@@ -321,37 +345,33 @@ while True:
             
 
         # reset the metric
-        classification_accuracy.reset_states()
-        domain_accuracy.reset_states()
+        #classification_accuracy.reset_states()
+        #domain_accuracy.reset_states()
 
     # test the model on 1st domain train
     for xbatch, ybatch in domain1_train_dataset:
-        encodings = generator_model(xbatch, training=False)
-        logits = classification_model(encodings, training=False)
+        logits = classification_model(xbatch, training=False)
         classification_accuracy.update_state(ybatch, logits)
     print(f"The accuracy on the 1st domain training set is: {float(classification_accuracy.result())}.")
     classification_accuracy.reset_states()
 
     # test the model on 1st domain test
     for xbatch, ybatch in domain1_test_dataset:
-        encodings = generator_model(xbatch, training=False)
-        logits = classification_model(encodings, training=False)
+        logits = classification_model(xbatch, training=False)
         classification_accuracy.update_state(ybatch, logits)
     print(f"The accuracy on the 1st domain testing set is: {float(classification_accuracy.result())}.")
     classification_accuracy.reset_states()
 
     # test the model on 2nd domain train
     for xbatch, ybatch in domain2_train_dataset:
-        encodings = generator_model(xbatch, training=False)
-        logits = classification_model(encodings, training=False)
+        logits = classification_model(xbatch, training=False)
         classification_accuracy.update_state(ybatch, logits)
     print(f"The accuracy on the 2nd domain training set is: {float(classification_accuracy.result())}.")
     classification_accuracy.reset_states()
 
     # test the model on 2nd domain test
     for xbatch, ybatch in domain2_test_dataset:
-        encodings = generator_model(xbatch, training=False)
-        logits = classification_model(encodings, training=False)
+        logits = classification_model(xbatch, training=False)
         classification_accuracy.update_state(ybatch, logits)
     print(f"The accuracy on the 2nd domain testing set is: {float(classification_accuracy.result())}.")
     classification_accuracy.reset_states()
