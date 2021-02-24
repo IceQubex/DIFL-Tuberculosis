@@ -12,9 +12,9 @@ from tensorflow.keras import layers
 from sklearn.metrics import roc_curve, roc_auc_score, auc
 
 img_height, img_width = 512,512
-secondary_img_height, secondary_img_width = 60,60 
+secondary_img_height, secondary_img_width = 63,63 
 num_of_filters = 512
-batch_size = 8 
+batch_size = 6 
 
 # function to refresh a dataset
 def refresh_dataset(dataset):
@@ -105,7 +105,16 @@ res = keras.applications.ResNet50(include_top=False,input_shape=(img_height,img_
 # define the entire network architecture
 inputs = keras.Input(shape=(img_height,img_width,3))
 x = Rescaling(scale=1.0/255)(inputs)
-outputs = res(x)
+x = res(x)
+x = layers.Conv2DTranspose(1024, (3,3), strides=(2,2), activation = layers.LeakyReLU(alpha=0.2))(x)
+#x = layers.Conv2DTranspose(512, (3,3), strides=(2,2), activation = layers.LeakyReLU(alpha=0.2))(x)
+x = layers.Conv2DTranspose(num_of_filters, (3,3), strides=(2,2), activation = layers.LeakyReLU(alpha=0.2))(x)
+x = layers.Conv2D(num_of_filters, (3,3), activation= layers.LeakyReLU(alpha=0.2))(x)
+x = layers.MaxPooling2D()(x)
+x = layers.Conv2DTranspose(num_of_filters, (3,3), strides=(2,2), activation = layers.LeakyReLU(alpha=0.2))(x)
+x = layers.Conv2D(num_of_filters, (3,3), activation= layers.LeakyReLU(alpha=0.2))(x)
+x = layers.MaxPooling2D()(x)
+outputs = layers.Conv2DTranspose(num_of_filters, (3,3), strides=(2,2), activation = layers.LeakyReLU(alpha=0.2))(x)
 
 # define the final model
 generator_model = keras.Model(inputs=inputs, outputs=outputs, name="DIFL_Generator_Model")
@@ -285,6 +294,13 @@ while True:
         # custom training loop for each batch in the training dataset
         for i in range(length):
             
+            if i%3 == 0:
+                print(f"Batch {i+1}...", end='\r')
+            elif i%3 == 1:
+                print(f"Batch {i+1}.", end='\r')
+            else:
+                print(f"Batch {i+1)..", end='\r')
+
             # get the batches for the classification training step
             try:
                 xbatchclass, ybatchclass = classification_iterator.get_next()
@@ -341,12 +357,15 @@ while True:
             discriminator_optimizer.apply_gradients(zip(discriminator_gradients, discriminator_model.trainable_weights))
             generator_optimizer.apply_gradients(zip(generator_gradients2, generator_model.trainable_weights))
             
-            print(f"The domain accuracy on batch {i+1} is {float(domain_accuracy.result())}.")
+            #print(f"The domain accuracy on batch {i+1} is {float(domain_accuracy.result())}.")
             
 
         # reset the metric
         #classification_accuracy.reset_states()
         #domain_accuracy.reset_states()
+    
+    # reset the classification metric
+    classification_accuracy.reset_states()
 
     # test the model on 1st domain train
     for xbatch, ybatch in domain1_train_dataset:
