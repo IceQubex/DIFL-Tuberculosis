@@ -269,9 +269,9 @@ Specify the other parameters for the networks
 '''
 
 # instantiate the optimizer for each network
-generator_optimizer = keras.optimizers.SGD(lr=1e-6, momentum=0.9)
-discriminator_optimizer = keras.optimizers.SGD(lr=1e-6, momentum=0.9)
-classification_optimizer = keras.optimizers.SGD(lr=1e-6, momentum=0.9)
+generator_optimizer = keras.optimizers.SGD(lr=1e-5, momentum=0.9)
+discriminator_optimizer = keras.optimizers.SGD(lr=1e-5, momentum=0.9)
+classification_optimizer = keras.optimizers.SGD(lr=1e-5, momentum=0.9)
 
 # instantiate the loss function
 binary_loss = keras.losses.BinaryCrossentropy()
