@@ -17,14 +17,16 @@ num_of_filters = 512
 batch_size = 6 
 
 # function to refresh a dataset
+#@tf.function
 def refresh_dataset(dataset):
-    print("Refreshing!")
+    print("\nRefreshing the dataset!")
     dataset = dataset.unbatch()
-    dataset = dataset.shuffle(50, reshuffle_each_iteration=False)
+    dataset = dataset.shuffle(500, reshuffle_each_iteration=False)
     dataset = dataset.batch(batch_size)
     return dataset
 
 # function to append domain labels to a dataset
+#@tf.function
 def append_domain_label(dataset, label):
     print("Enter!")
     dataset = dataset.unbatch()
@@ -58,11 +60,12 @@ domain2_test_dataset = keras.preprocessing.image_dataset_from_directory(domain2_
 
 length = len(domain1_train_dataset)
 
+'''
 domain1_train_dataset = domain1_train_dataset.shuffle(1, reshuffle_each_iteration=False)
 domain1_test_dataset = domain1_test_dataset.shuffle(100, reshuffle_each_iteration=False)
 domain2_train_dataset = domain2_train_dataset.shuffle(100, reshuffle_each_iteration=False)
 domain2_test_dataset = domain2_test_dataset.shuffle(100, reshuffle_each_iteration=False)
-
+'''
 
 print("Datasets imported!")
 print("Making necessary changes to datasets..")
@@ -70,19 +73,19 @@ print("Making necessary changes to datasets..")
 # adding domain labels
 print("Appending domain labels to Domain1 train..")
 d1_train = append_domain_label(domain1_train_dataset, 0)
-print("Appending domain labels to Domain1 test..")
-d1_test = append_domain_label(domain1_test_dataset, 0)
+#print("Appending domain labels to Domain1 test..")
+#d1_test = append_domain_label(domain1_test_dataset, 0)
 print("Appending domain labels to Domain2 train..")
 d2_train = append_domain_label(domain2_train_dataset, 1)
-print("Appending domain labels to Domain2 test..")
-d2_test = append_domain_label(domain2_test_dataset, 1)
+#print("Appending domain labels to Domain2 test..")
+#d2_test = append_domain_label(domain2_test_dataset, 1)
 
 # create the discriminator dateset
 combined_dataset = d1_train.concatenate(d2_train)
-combined_dataset = combined_dataset.shuffle(100)
-combined_dataset = combined_dataset.shuffle(100)
-combined_dataset = combined_dataset.batch(batch_size)
 combined_dataset = combined_dataset.shuffle(100, reshuffle_each_iteration=False)
+#combined_dataset = combined_dataset.shuffle(100)
+combined_dataset = combined_dataset.batch(batch_size)
+#combined_dataset = combined_dataset.shuffle(100, reshuffle_each_iteration=False)
 
 print("Done manipulating datasets!")
 
@@ -269,9 +272,9 @@ Specify the other parameters for the networks
 '''
 
 # instantiate the optimizer for each network
-generator_optimizer = keras.optimizers.SGD(lr=1e-5, momentum=0.9)
-discriminator_optimizer = keras.optimizers.SGD(lr=1e-5, momentum=0.9)
-classification_optimizer = keras.optimizers.SGD(lr=1e-5, momentum=0.9)
+generator_optimizer = keras.optimizers.SGD(lr=1e-3, momentum=0.9)
+discriminator_optimizer = keras.optimizers.SGD(lr=1e-3, momentum=0.9)
+classification_optimizer = keras.optimizers.SGD(lr=1e-3, momentum=0.9)
 
 # instantiate the loss function
 binary_loss = keras.losses.BinaryCrossentropy()
@@ -294,7 +297,9 @@ while True:
         # custom training loop for each batch in the training dataset
         for i in range(length):
             
-            if i%3 == 0:
+            if i == length-1:
+                print(f"Training batch {i+1}...  ")
+            elif i%3 == 0:
                 print(f"Training batch {i+1}...  ", end='\r')
             elif i%3 == 1:
                 print(f"Training batch {i+1}.    ", end='\r')
@@ -305,6 +310,7 @@ while True:
             try:
                 xbatchclass, ybatchclass = classification_iterator.get_next()
             except tf.errors.OutOfRangeError:
+                #domain1_train_dataset = refresh_dataset(domain1_train_dataset)
                 classification_iterator = iter(refresh_dataset(domain1_train_dataset))
                 xbatchclass, ybatchclass = classification_iterator.get_next()
                 print(f"The classification accuracy is {float(classification_accuracy.result())}.")
@@ -329,6 +335,7 @@ while True:
             try:
                 xbatchdomain, ybatchdomain = domain_iterator.get_next()
             except tf.errors.OutOfRangeError:
+                #combined_dataset = refresh_dataset(combined_dataset)
                 domain_iterator = iter(refresh_dataset(combined_dataset))
                 xbatchdomain, ybatchdomain = domain_iterator.get_next()
                 print(f"The domain accuracy is {float(domain_accuracy.result())}.")
