@@ -101,7 +101,7 @@ Preparing the difl generator model
 '''
 
 # define the base resnet
-res = keras.applications.ResNet50(include_top=False,input_shape=(img_height,img_width,3),weights='imagenet')
+res = keras.applications.ResNet50(include_top=False,input_shape=(img_height,img_width,3),weights=None)
 
 # define the entire network architecture
 inputs = keras.Input(shape=(img_height,img_width,3))
