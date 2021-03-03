@@ -17,7 +17,7 @@ secondary_img_height, secondary_img_width = 63,63
 num_of_filters = 512
 batch_size = 6
 classifier_lr = 1e-3
-generator_lr = 1e-3
+generator_lr = 5e-3
 discriminator_lr = 1e-3
 
 # function to refresh a dataset
@@ -475,42 +475,43 @@ while True:
     
         # reset the classification metric
         classification_accuracy.reset_states()
+        
+        if epoch!=0 and (epoch+1)%5==0:
+            # test the model on 1st domain train
+            for xbatch, ybatch in domain1_train_dataset:
+                logits = classification_model(xbatch, training=False)
+                classification_accuracy.update_state(ybatch, logits)
+            print(f"The accuracy on the 1st domain training set is: {float(classification_accuracy.result())}.")
+            with accuracy_writer.as_default():
+                tf.summary.scalar("1st Domain Train Accuracy", classification_accuracy.result(), step=epoch)
+            classification_accuracy.reset_states()
 
-        # test the model on 1st domain train
-        for xbatch, ybatch in domain1_train_dataset:
-            logits = classification_model(xbatch, training=False)
-            classification_accuracy.update_state(ybatch, logits)
-        print(f"The accuracy on the 1st domain training set is: {float(classification_accuracy.result())}.")
-        with accuracy_writer.as_default():
-            tf.summary.scalar("1st Domain Train Accuracy", classification_accuracy.result(), step=epoch)
-        classification_accuracy.reset_states()
+            # test the model on 1st domain test
+            for xbatch, ybatch in domain1_test_dataset:
+                logits = classification_model(xbatch, training=False)
+                classification_accuracy.update_state(ybatch, logits)
+            print(f"The accuracy on the 1st domain testing set is: {float(classification_accuracy.result())}.")
+            with accuracy_writer.as_default():
+                tf.summary.scalar("1st Domain Test Accuracy", classification_accuracy.result(), step=epoch)
+            classification_accuracy.reset_states()
 
-        # test the model on 1st domain test
-        for xbatch, ybatch in domain1_test_dataset:
-            logits = classification_model(xbatch, training=False)
-            classification_accuracy.update_state(ybatch, logits)
-        print(f"The accuracy on the 1st domain testing set is: {float(classification_accuracy.result())}.")
-        with accuracy_writer.as_default():
-            tf.summary.scalar("1st Domain Test Accuracy", classification_accuracy.result(), step=epoch)
-        classification_accuracy.reset_states()
+            # test the model on 2nd domain train
+            for xbatch, ybatch in domain2_train_dataset:
+                logits = classification_model(xbatch, training=False)
+                classification_accuracy.update_state(ybatch, logits)
+            print(f"The accuracy on the 2nd domain training set is: {float(classification_accuracy.result())}.")
+            with accuracy_writer.as_default():
+                tf.summary.scalar("2nd Domain Train Accuracy", classification_accuracy.result(), step=epoch)
+            classification_accuracy.reset_states()
 
-        # test the model on 2nd domain train
-        for xbatch, ybatch in domain2_train_dataset:
-            logits = classification_model(xbatch, training=False)
-            classification_accuracy.update_state(ybatch, logits)
-        print(f"The accuracy on the 2nd domain training set is: {float(classification_accuracy.result())}.")
-        with accuracy_writer.as_default():
-            tf.summary.scalar("2nd Domain Train Accuracy", classification_accuracy.result(), step=epoch)
-        classification_accuracy.reset_states()
-
-        # test the model on 2nd domain test
-        for xbatch, ybatch in domain2_test_dataset:
-            logits = classification_model(xbatch, training=False)
-            classification_accuracy.update_state(ybatch, logits)
-        print(f"The accuracy on the 2nd domain testing set is: {float(classification_accuracy.result())}.")
-        with accuracy_writer.as_default():
-            tf.summary.scalar("2nd Domain Test Accuracy", classification_accuracy.result(), step=epoch)
-        classification_accuracy.reset_states()
+            # test the model on 2nd domain test
+            for xbatch, ybatch in domain2_test_dataset:
+                logits = classification_model(xbatch, training=False)
+                classification_accuracy.update_state(ybatch, logits)
+            print(f"The accuracy on the 2nd domain testing set is: {float(classification_accuracy.result())}.")
+            with accuracy_writer.as_default():
+                tf.summary.scalar("2nd Domain Test Accuracy", classification_accuracy.result(), step=epoch)
+            classification_accuracy.reset_states()
 
     # accept user input for extra epochs
     option = "1"
