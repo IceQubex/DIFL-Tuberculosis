@@ -16,9 +16,10 @@ img_height, img_width = 512,512
 secondary_img_height, secondary_img_width = 63,63 
 num_of_filters = 512
 batch_size = 6
-classifier_lr = 1e-3
+classification_lr = 1e-3
 generator_lr = 5e-3
 discriminator_lr = 1e-3
+frequency = 10
 
 # function to refresh a dataset
 #@tf.function
@@ -256,8 +257,8 @@ classification_model = keras.Model(inputs=inputs3, outputs=outputs3, name="Class
 print(classification_model.summary())
 #print(classification_model.layers[1].layers[2].summary())
 #print(len(classification_model.layers[1].layers[2].layers))
-print(classification_model.layers[2].summary())
-print(len(classification_model.layers[2].layers))
+#print(classification_model.layers[2].summary())
+#print(len(classification_model.layers[2].layers))
 
 
 
@@ -277,9 +278,9 @@ lr_schedule = keras.optimizers.schedules.ExponentialDecay(1e-3, decay_steps=10, 
 
 
 # instantiate the optimizer for each network
-generator_optimizer = keras.optimizers.SGD(learning_rate=1e-3, momentum=0.9)
-discriminator_optimizer = keras.optimizers.SGD(learning_rate=1e-3, momentum=0.9)
-classification_optimizer = keras.optimizers.SGD(learning_rate=1e-3, momentum=0.9)
+generator_optimizer = keras.optimizers.SGD(learning_rate=generator_lr, momentum=0.9)
+discriminator_optimizer = keras.optimizers.SGD(learning_rate=discriminator_lr, momentum=0.9)
+classification_optimizer = keras.optimizers.SGD(learning_rate=classification_lr, momentum=0.9)
 
 # instantiate the loss function
 binary_loss = keras.losses.BinaryCrossentropy()
@@ -302,8 +303,6 @@ domain_layer1_weights_gradients = keras.metrics.MeanTensor()
 domain_layer1_bias_gradients = keras.metrics.MeanTensor()
 domain_final_layer_weights_gradients = keras.metrics.MeanTensor()
 domain_final_layer_bias_gradients = keras.metrics.MeanTensor()
-
-
 
 '''
 Start training the model as well as its evaluation
@@ -476,7 +475,7 @@ while True:
         # reset the classification metric
         classification_accuracy.reset_states()
         
-        if epoch!=0 and (epoch+1)%5==0:
+        if epoch%(frequency)==0:
             # test the model on 1st domain train
             for xbatch, ybatch in domain1_train_dataset:
                 logits = classification_model(xbatch, training=False)
