@@ -1,0 +1,9 @@
+With Classification Training - GPU 0
+Source Domain: ../datasets/us/, Target Domain: ../datasets/china/
+Image Parameters: 512, 512
+Secondary Image Parameters: 63, 63
+Number of Filters: 512
+Batch Size: 6
+Classification Learning Rate: 0.0001
+Generator & Discriminator Learning Rate: 0.0001
+Frequency of output to Tensorboard: 25

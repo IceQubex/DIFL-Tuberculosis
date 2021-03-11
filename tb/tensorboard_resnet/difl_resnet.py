@@ -16,10 +16,9 @@ img_height, img_width = 512,512
 secondary_img_height, secondary_img_width = 63,63 
 num_of_filters = 512
 batch_size = 6
-classification_lr = 1e-3
-generator_lr = 5e-3
-discriminator_lr = 1e-3
-frequency = 10
+classification_lr = 1e-4
+generator_lr = discriminator_lr = 1e-4
+frequency = 25
 
 # function to refresh a dataset
 #@tf.function
@@ -48,14 +47,37 @@ def append_domain_label(dataset, label):
     print("Returning!")
     return tf.data.Dataset.zip((x, d))
 
-# learning rate scheduler function
-def learning_rate_scheduler(epoch):
-    if epoch < 10:
-        return 1e-3
-    #elif 100 <= epoch < 200:
-    #    return 1e-4
+# helper function to print nice strings
+def prettify_number(number):
+    if number == 1:
+        return "1st"
+    elif number == 2:
+        return "2nd"
+    elif number == 3:
+        return "3rd"
     else:
-        return 0
+        return f"{number}th"
+
+# create the log directory for this run
+r = 1
+while True:
+    if os.path.isdir(f"runs/{r}_run"):
+        r += 1
+    else:
+        print(f"Logs are saved as the {prettify_number(r)} run!")
+        break
+
+os.makedirs(f"runs/{r}_run")
+with open(f"runs/{r}_run/hyperparameters.txt","w") as f:
+    f.write(f"With Classification Training\n")
+    f.write(f"Source Domain: {sys.argv[1]}, Target Domain: {sys.argv[2]}\n")
+    f.write(f"Image Parameters: {img_height}, {img_width}\n")
+    f.write(f"Secondary Image Parameters: {secondary_img_height}, {secondary_img_width}\n")
+    f.write(f"Number of Filters: {num_of_filters}\n")
+    f.write(f"Batch Size: {batch_size}\n")
+    f.write(f"Classification Learning Rate: {classification_lr}\n")
+    f.write(f"Generator & Discriminator Learning Rate: {generator_lr}\n")
+    f.write(f"Frequency of output to Tensorboard: {frequency}\n")
 
 # parse input arguments into lists
 domain1_directory = sys.argv[1]
@@ -314,9 +336,9 @@ domain_iterator = iter(combined_dataset)
 '''
 Tensorboard initialization
 '''
-epoch_writer = tf.summary.create_file_writer("epoch-logs/")
-batch_writer = tf.summary.create_file_writer("batch-logs/")
-accuracy_writer = tf.summary.create_file_writer("accuracy-logs/")
+epoch_writer = tf.summary.create_file_writer(f"runs/{r}_run/epoch-logs/")
+batch_writer = tf.summary.create_file_writer(f"runs/{r}_run/batch-logs/")
+accuracy_writer = tf.summary.create_file_writer(f"runs/{r}_run/accuracy-logs/")
 
 # main training loop
 while True:
@@ -336,7 +358,8 @@ while True:
                 print(f"Training batch {i+1}.    ", end='\r')
             else:
                 print(f"Training batch {i+1}..   ", end='\r')
-
+            
+            
             # get the batches for the classification training step
             try:
                 xbatchclass, ybatchclass = classification_iterator.get_next()
@@ -366,6 +389,7 @@ while True:
             classification_optimizer.apply_gradients(zip(classification_gradients, classification_model.trainable_weights))
 
             #print(f"The classification accuracy on batch {i+1} is {float(classification_accuracy.result())}.")
+            
 
             # get the batches for the domain (GAN) training step
             try:
@@ -431,11 +455,13 @@ while True:
             tf.summary.scalar("Generator Loss", generator_loss.result(), step=epoch)
             tf.summary.scalar("Discriminator Loss", discriminator_loss.result(), step=epoch)
             
+            
             # write the gradient state histogram for classification
             tf.summary.histogram("Classification Layer 1 Weight Gradients", classification_layer1_weights_gradients.result(), step=epoch)
             tf.summary.histogram("Classification Layer 1 Bias Gradients", classification_layer1_bias_gradients.result(), step=epoch)
             tf.summary.histogram("Classification Final Layer Weight Gradients", classification_final_layer_weights_gradients.result(), step=epoch)
             tf.summary.histogram("Classification Final Layer Bias Gradients", classification_final_layer_bias_gradients.result(), step=epoch)
+            
 
             # write the gradient state histogram for domain
             tf.summary.histogram("Generator Layer 1 Weight Gradients", domain_layer1_weights_gradients.result(), step=epoch)
